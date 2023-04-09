@@ -1,5 +1,8 @@
---- config.def.h	2022-10-04 17:38:18.000000000 +0000
-+++ config.def.h	2023-04-09 09:49:00.271877424 +0000
+diff --git a/config.def.h b/config.def.h
+index 1c0b587..38d2f6c 100644
+
+--- config.def.h
++++ config.def.h
 @@ -45,7 +45,7 @@
  };
  
@@ -9,3 +12,7 @@
  #define TAGKEYS(KEY,TAG) \
  	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
  	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
+ 
+-- 
+2.20.1
+

@@ -1,5 +1,5 @@
 From 1f9992ae1a745a86294a555051ea17ba4ef5ce5f Mon Sep 17 00:00:00 2001
-From: bakkeby <bakkeby@gmail.com>
+From: daniel <danielgomez3@verizon.net>
 Date: Mon, 6 Apr 2020 12:04:55 +0200
 Subject: [PATCH 1/2] Adding cfacts patch which provides the ability to assign
  different weights to clients in their respective stack in tiled layout.
@@ -197,7 +197,7 @@ index 83910c1..91a9cfc 100644
 +	{ MODKEY|Mod4Mask,              XK_9,      incrovgaps,     {.i = +1 } },
 +	{ MODKEY|Mod4Mask|ShiftMask,    XK_9,      incrovgaps,     {.i = -1 } },
 +	{ MODKEY|Mod4Mask|ShiftMask,    XK_0,      defaultgaps,    {0} },
-+	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[4]} },
++	{ MODKEY,                       XK_n,      setlayout,      {.v = &layouts[4]} },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },

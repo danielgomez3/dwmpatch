@@ -130,6 +130,7 @@ among the available clients.
  dwm.c        |  43 +--
  vanitygaps.c | 822 +++++++++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 867 insertions(+), 36 deletions(-)
+ create mode 100644 vanitygaps.c
 --- a/config.def.h
 +++ b/config.def.h
 @@ -3,6 +3,11 @@
@@ -1108,6 +1109,7 @@ Subject: [PATCH] changing superflous things
 
 ---
  config.def.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 --- a/config.def.h
 +++ b/config.def.h
 @@ -1,7 +1,7 @@
@@ -1153,6 +1155,7 @@ Subject: [PATCH] changing superflous things
 2.38.4
 
 diff --git a/config.def.h b/config.def.h
+index 1c0b587..cb8053a 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -35,6 +35,7 @@ static const Rule rules[] = {

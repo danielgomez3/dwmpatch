@@ -1,20 +1,93 @@
-From 1f9992ae1a745a86294a555051ea17ba4ef5ce5f Mon Sep 17 00:00:00 2001
-From: bakkeby <bakkeby@gmail.com>
-Date: Mon, 6 Apr 2020 12:04:55 +0200
-Subject: [PATCH 1/2] Adding cfacts patch which provides the ability to assign
- different weights to clients in their respective stack in tiled layout.
+From bcc95005fb61a4902d571524e63e67d700efb3f9 Mon Sep 17 00:00:00 2001
+From: danielgomez3 <danielgomez3@verizon.net>
+Date: Tue, 11 Apr 2023 18:00:44 +0000
+Subject: [PATCH] patchofpatch
 
-Refer to https://dwm.suckless.org/patches/cfacts/
 ---
- config.def.h |  3 +++
- dwm.c        | 35 ++++++++++++++++++++++++++++++++---
- 2 files changed, 35 insertions(+), 3 deletions(-)
+ config.def.h |  59 +++-
+ dwm.1        |   3 +
+ dwm.c        |  87 ++++--
+ vanitygaps.c | 822 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 934 insertions(+), 37 deletions(-)
+ create mode 100644 vanitygaps.c
 
 diff --git a/config.def.h b/config.def.h
-index 1c0b587..83910c1 100644
+index 1c0b587..e5ec4c1 100644
 --- a/config.def.h
 +++ b/config.def.h
-@@ -70,6 +70,9 @@ static Key keys[] = {
+@@ -1,8 +1,13 @@
+ /* See LICENSE file for copyright and license details. */
+ 
+ /* appearance */
+-static const unsigned int borderpx  = 1;        /* border pixel of windows */
++static const unsigned int borderpx  = 0;        /* border pixel of windows */
+ static const unsigned int snap      = 32;       /* snap pixel */
++static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
++static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
++static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
++static const unsigned int gappov    = 20;       /* vert outer gap between windows and screen edge */
++static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
+ static const int showbar            = 1;        /* 0 means no bar */
+ static const int topbar             = 1;        /* 0 means bottom bar */
+ static const char *fonts[]          = { "monospace:size=10" };
+@@ -32,19 +37,35 @@ static const Rule rules[] = {
+ };
+ 
+ /* layout(s) */
+-static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
++static const float mfact     = 0.5; /* factor of master area size [0.05..0.95] */
+ static const int nmaster     = 1;    /* number of clients in master area */
+ static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
++static const int attachbelow = 1;    /* 1 means attach after the currently active window */
++
++#define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
++#include "vanitygaps.c"
+ 
+ static const Layout layouts[] = {
+ 	/* symbol     arrange function */
++	{ "[\\]",     dwindle },
++	{ "[M]",      monocle },
+ 	{ "[]=",      tile },    /* first entry is default */
++	{ "[@]",      spiral },
++	{ "H[]",      deck },
++	{ "TTT",      bstack },
++	{ "===",      bstackhoriz },
++	{ "HHH",      grid },
++	{ "###",      nrowgrid },
++	{ "---",      horizgrid },
++	{ ":::",      gaplessgrid },
++	{ "|M|",      centeredmaster },
++	{ ">M>",      centeredfloatingmaster },
+ 	{ "><>",      NULL },    /* no layout function means floating behavior */
+-	{ "[M]",      monocle },
++	{ NULL,       NULL },
+ };
+ 
+ /* key definitions */
+-#define MODKEY Mod1Mask
++#define MODKEY Mod4Mask
+ #define TAGKEYS(KEY,TAG) \
+ 	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+ 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
+@@ -56,12 +77,14 @@ static const Layout layouts[] = {
+ 
+ /* commands */
+ static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
+-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
+-static const char *termcmd[]  = { "st", NULL };
++static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL }; /*unused*/
++static const char *roficmd[] = { "rofi", "-show", "drun", "-show-icons", NULL };
++static const char *termcmd[]  = { "kitty", NULL };
++static const char *customcmd_1[] = {"flameshot", "gui", "-c", "-s", NULL};
++static const char *customcmd_2[] = {"flameshot", "gui", "-s", NULL};
+ 
+ static Key keys[] = {
+ 	/* modifier                     key        function        argument */
+-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+ 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
+ 	{ MODKEY,                       XK_b,      togglebar,      {0} },
+ 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
+@@ -70,7 +93,29 @@ static Key keys[] = {
  	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
  	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
  	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
@@ -22,8 +95,44 @@ index 1c0b587..83910c1 100644
 +	{ MODKEY|ShiftMask,             XK_l,      setcfact,       {.f = -0.25} },
 +	{ MODKEY|ShiftMask,             XK_o,      setcfact,       {.f =  0.00} },
  	{ MODKEY,                       XK_Return, zoom,           {0} },
++	{ MODKEY|Mod4Mask,              XK_u,      incrgaps,       {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_u,      incrgaps,       {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_i,      incrigaps,      {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_i,      incrigaps,      {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_o,      incrogaps,      {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_o,      incrogaps,      {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_6,      incrihgaps,     {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_6,      incrihgaps,     {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_7,      incrivgaps,     {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_7,      incrivgaps,     {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_8,      incrohgaps,     {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_8,      incrohgaps,     {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_9,      incrovgaps,     {.i = +1 } },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_9,      incrovgaps,     {.i = -1 } },
++	{ MODKEY|Mod4Mask,              XK_0,      togglegaps,     {0} },
++	{ MODKEY|Mod4Mask|ShiftMask,    XK_0,      defaultgaps,    {0} },
++	{ MODKEY, XK_p, spawn, {.v = roficmd } },
++	{ MODKEY, 											XK_c,		 spawn,						{.v = customcmd_1} },
++	{ MODKEY, 											XK_x,		 spawn,						{.v = customcmd_2} },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
+ 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
+diff --git a/dwm.1 b/dwm.1
+index 13b3729..fb6e76c 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -29,6 +29,9 @@ color. The tags of the focused window are indicated with a filled square in the
+ top left corner.  The tags which are applied to one or more windows are
+ indicated with an empty square in the top left corner.
+ .P
++The attach below patch makes newly spawned windows attach after the currently
++selected window
++.P
+ dwm draws a small border around windows to indicate the focus state.
+ .SH OPTIONS
+ .TP
+diff --git a/dwm.c b/dwm.c
+index 4465af1..183aa42 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -87,6 +87,7 @@ typedef struct Client Client;
@@ -34,7 +143,26 @@ index 1c0b587..83910c1 100644
  	int x, y, w, h;
  	int oldx, oldy, oldw, oldh;
  	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
-@@ -200,6 +201,7 @@ static void setclientstate(Client *c, long state);
+@@ -119,6 +120,10 @@ struct Monitor {
+ 	int by;               /* bar geometry */
+ 	int mx, my, mw, mh;   /* screen size */
+ 	int wx, wy, ww, wh;   /* window area  */
++	int gappih;           /* horizontal gap between windows */
++	int gappiv;           /* vertical gap between windows */
++	int gappoh;           /* horizontal outer gaps */
++	int gappov;           /* vertical outer gaps */
+ 	unsigned int seltags;
+ 	unsigned int sellt;
+ 	unsigned int tagset[2];
+@@ -147,6 +152,7 @@ static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interac
+ static void arrange(Monitor *m);
+ static void arrangemon(Monitor *m);
+ static void attach(Client *c);
++static void attachBelow(Client *c);
+ static void attachstack(Client *c);
+ static void buttonpress(XEvent *e);
+ static void checkotherwm(void);
+@@ -200,6 +206,7 @@ static void setclientstate(Client *c, long state);
  static void setfocus(Client *c);
  static void setfullscreen(Client *c, int fullscreen);
  static void setlayout(const Arg *arg);
@@ -42,7 +170,48 @@ index 1c0b587..83910c1 100644
  static void setmfact(const Arg *arg);
  static void setup(void);
  static void seturgent(Client *c, int urg);
-@@ -1029,6 +1031,7 @@ manage(Window w, XWindowAttributes *wa)
+@@ -208,7 +215,6 @@ static void sigchld(int unused);
+ static void spawn(const Arg *arg);
+ static void tag(const Arg *arg);
+ static void tagmon(const Arg *arg);
+-static void tile(Monitor *);
+ static void togglebar(const Arg *arg);
+ static void togglefloating(const Arg *arg);
+ static void toggletag(const Arg *arg);
+@@ -405,6 +411,21 @@ attach(Client *c)
+ 	c->next = c->mon->clients;
+ 	c->mon->clients = c;
+ }
++void
++attachBelow(Client *c)
++{
++	//If there is nothing on the monitor or the selected client is floating, attach as normal
++	if(c->mon->sel == NULL || c->mon->sel == c || c->mon->sel->isfloating) {
++		attach(c);
++		return;
++	}
++
++	//Set the new client's next property to the same as the currently selected clients next
++	c->next = c->mon->sel->next;
++	//Set the currently selected clients next property to the new client
++	c->mon->sel->next = c;
++
++}
+ 
+ void
+ attachstack(Client *c)
+@@ -638,6 +659,10 @@ createmon(void)
+ 	m->nmaster = nmaster;
+ 	m->showbar = showbar;
+ 	m->topbar = topbar;
++	m->gappih = gappih;
++	m->gappiv = gappiv;
++	m->gappoh = gappoh;
++	m->gappov = gappov;
+ 	m->lt[0] = &layouts[0];
+ 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
+ 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+@@ -1029,6 +1054,7 @@ manage(Window w, XWindowAttributes *wa)
  	c->w = c->oldw = wa->width;
  	c->h = c->oldh = wa->height;
  	c->oldbw = wa->border_width;
@@ -50,7 +219,31 @@ index 1c0b587..83910c1 100644
  
  	updatetitle(c);
  	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
-@@ -1511,6 +1514,24 @@ setlayout(const Arg *arg)
+@@ -1062,7 +1088,10 @@ manage(Window w, XWindowAttributes *wa)
+ 		c->isfloating = c->oldstate = trans != None || c->isfixed;
+ 	if (c->isfloating)
+ 		XRaiseWindow(dpy, c->win);
+-	attach(c);
++	if( attachbelow )
++		attachBelow(c);
++	else
++		attach(c);
+ 	attachstack(c);
+ 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
+ 		(unsigned char *) &(c->win), 1);
+@@ -1417,7 +1446,10 @@ sendmon(Client *c, Monitor *m)
+ 	detachstack(c);
+ 	c->mon = m;
+ 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
+-	attach(c);
++	if( attachbelow )
++		attachBelow(c);
++	else
++		attach(c);
+ 	attachstack(c);
+ 	focus(NULL);
+ 	arrange(NULL);
+@@ -1511,6 +1543,24 @@ setlayout(const Arg *arg)
  		drawbar(selmon);
  }
  
@@ -75,163 +268,7 @@ index 1c0b587..83910c1 100644
  /* arg > 1.0 will set mfact absolutely */
  void
  setmfact(const Arg *arg)
-@@ -1674,9 +1695,15 @@ void
- tile(Monitor *m)
- {
- 	unsigned int i, n, h, mw, my, ty;
-+	float mfacts = 0, sfacts = 0;
- 	Client *c;
- 
--	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
-+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
-+		if (n < m->nmaster)
-+			mfacts += c->cfact;
-+		else
-+			sfacts += c->cfact;
-+	}
- 	if (n == 0)
- 		return;
- 
-@@ -1686,13 +1713,15 @@ tile(Monitor *m)
- 		mw = m->ww;
- 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
- 		if (i < m->nmaster) {
--			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-+			h = (m->wh - my) * (c->cfact / mfacts);
- 			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
- 			my += HEIGHT(c);
-+			mfacts -= c->cfact;
- 		} else {
--			h = (m->wh - ty) / (n - i);
-+			h = (m->wh - ty) * (c->cfact / sfacts);
- 			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
- 			ty += HEIGHT(c);
-+			sfacts -= c->cfact;
- 		}
- }
- 
--- 
-2.19.1
-
-
-From 051e4de72079bb0b8e50d2faa61b9a0ef36434b5 Mon Sep 17 00:00:00 2001
-From: bakkeby <bakkeby@gmail.com>
-Date: Fri, 8 May 2020 16:51:00 +0200
-Subject: [PATCH 2/2] vanitygaps - adds gaps to layouts
-
-This patch differentiates between inner and outer gaps as well as
-horizontal and vertical gaps.
-
-The logic of these layouts also aims to be pixel perfect by ensuring
-an even split of the available space and re-distributing the remainder
-among the available clients.
----
- config.def.h |  38 ++-
- dwm.c        |  43 +--
- vanitygaps.c | 822 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 867 insertions(+), 36 deletions(-)
---- a/config.def.h
-+++ b/config.def.h
-@@ -3,6 +3,11 @@
- /* appearance */
- static const unsigned int borderpx  = 1;        /* border pixel of windows */
- static const unsigned int snap      = 32;       /* snap pixel */
-+static const unsigned int gappih    = 20;       /* horiz inner gap between windows */
-+static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
-+static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
-+static const unsigned int gappov    = 30;       /* vert outer gap between windows and screen edge */
-+static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
- static const int showbar            = 1;        /* 0 means no bar */
- static const int topbar             = 1;        /* 0 means bottom bar */
- static const char *fonts[]          = { "monospace:size=10" };
-@@ -36,11 +41,26 @@ static const float mfact     = 0.55; /* factor of master area size [0.05..0.95]
- static const int nmaster     = 1;    /* number of clients in master area */
- static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
- 
-+#define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
-+#include "vanitygaps.c"
-+
- static const Layout layouts[] = {
- 	/* symbol     arrange function */
-+	{ "[\\]",     dwindle },
--	{ "><>",      NULL },    /* no layout function means floating behavior */
- 	{ "[M]",      monocle },
-+	{ "[@]",      spiral },
- 	{ "[]=",      tile },    /* first entry is default */
-+	{ "H[]",      deck },
-+	{ "TTT",      bstack },
-+	{ "===",      bstackhoriz },
-+	{ "HHH",      grid },
-+	{ "###",      nrowgrid },
-+	{ "---",      horizgrid },
-+	{ ":::",      gaplessgrid },
-+	{ "|M|",      centeredmaster },
-+	{ ">M>",      centeredfloatingmaster },
-+	{ "><>",      NULL },    /* no layout function means floating behavior */
-+	{ NULL,       NULL },
- };
- 
- /* key definitions */
-@@ -74,6 +94,25 @@ static Key keys[] = {
- 	{ MODKEY|ShiftMask,             XK_l,      setcfact,       {.f = -0.25} },
- 	{ MODKEY|ShiftMask,             XK_o,      setcfact,       {.f =  0.00} },
- 	{ MODKEY,                       XK_Return, zoom,           {0} },
-+	{ MODKEY|Mod4Mask,              XK_u,      incrgaps,       {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_u,      incrgaps,       {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_i,      incrigaps,      {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_i,      incrigaps,      {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_o,      incrogaps,      {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_o,      incrogaps,      {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_6,      incrihgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_6,      incrihgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_7,      incrivgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_7,      incrivgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_8,      incrohgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_8,      incrohgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_9,      incrovgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_9,      incrovgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_0,      togglegaps,     {0} },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_0,      defaultgaps,    {0} },
-+	{ MODKEY, XK_p, spawn, {.v = roficmd } },
-+	{ MODKEY, 											XK_c,		 spawn,						{.v = customcmd_1} },
-+	{ MODKEY, 											XK_x,		 spawn,						{.v = customcmd_2} },
- 	{ MODKEY,                       XK_Tab,    view,           {0} },
- 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
- 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-diff --git a/dwm.c b/dwm.c
---- a/dwm.c
-+++ b/dwm.c
-@@ -120,6 +120,10 @@ struct Monitor {
- 	int by;               /* bar geometry */
- 	int mx, my, mw, mh;   /* screen size */
- 	int wx, wy, ww, wh;   /* window area  */
-+	int gappih;           /* horizontal gap between windows */
-+	int gappiv;           /* vertical gap between windows */
-+	int gappoh;           /* horizontal outer gaps */
-+	int gappov;           /* vertical outer gaps */
- 	unsigned int seltags;
- 	unsigned int sellt;
- 	unsigned int tagset[2];
-@@ -210,7 +214,6 @@ static void sigchld(int unused);
- static void spawn(const Arg *arg);
- static void tag(const Arg *arg);
- static void tagmon(const Arg *arg);
--static void tile(Monitor *);
- static void togglebar(const Arg *arg);
- static void togglefloating(const Arg *arg);
- static void toggletag(const Arg *arg);
-@@ -640,6 +643,10 @@ createmon(void)
- 	m->nmaster = nmaster;
- 	m->showbar = showbar;
- 	m->topbar = topbar;
-+	m->gappih = gappih;
-+	m->gappiv = gappiv;
-+	m->gappoh = gappoh;
-+	m->gappov = gappov;
- 	m->lt[0] = &layouts[0];
- 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
- 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
-@@ -1691,40 +1698,6 @@ tagmon(const Arg *arg)
+@@ -1670,32 +1720,6 @@ tagmon(const Arg *arg)
  	sendmon(selmon->sel, dirtomon(arg->i));
  }
  
@@ -239,15 +276,9 @@ diff --git a/dwm.c b/dwm.c
 -tile(Monitor *m)
 -{
 -	unsigned int i, n, h, mw, my, ty;
--	float mfacts = 0, sfacts = 0;
 -	Client *c;
 -
--	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
--		if (n < m->nmaster)
--			mfacts += c->cfact;
--		else
--			sfacts += c->cfact;
--	}
+-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
 -	if (n == 0)
 -		return;
 -
@@ -257,21 +288,34 @@ diff --git a/dwm.c b/dwm.c
 -		mw = m->ww;
 -	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 -		if (i < m->nmaster) {
--			h = (m->wh - my) * (c->cfact / mfacts);
+-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
 -			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
 -			my += HEIGHT(c);
--			mfacts -= c->cfact;
 -		} else {
--			h = (m->wh - ty) * (c->cfact / sfacts);
+-			h = (m->wh - ty) / (n - i);
 -			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
 -			ty += HEIGHT(c);
--			sfacts -= c->cfact;
 -		}
 -}
 -
  void
  togglebar(const Arg *arg)
  {
+@@ -1897,7 +1921,10 @@ updategeom(void)
+ 					m->clients = c->next;
+ 					detachstack(c);
+ 					c->mon = mons;
+-					attach(c);
++					if( attachbelow )
++						attachBelow(c);
++					else
++						attach(c);
+ 					attachstack(c);
+ 				}
+ 				if (m == selmon)
+diff --git a/vanitygaps.c b/vanitygaps.c
+new file mode 100644
+index 0000000..1a816b6
 --- /dev/null
 +++ b/vanitygaps.c
 @@ -0,0 +1,822 @@
@@ -1099,147 +1143,5 @@ diff --git a/dwm.c b/dwm.c
 +}
 \ No newline at end of file
 -- 
-2.19.1
-
-From d5a10159e632c06edfce4da3cf1879d143f09700 Mon Sep 17 00:00:00 2001
-From: danielgomez3 <danielgomez3@verizon.net>
-Date: Tue, 11 Apr 2023 07:00:26 +0000
-Subject: [PATCH] changing superflous things
-
----
- config.def.h | 8 ++++----
---- a/config.def.h
-+++ b/config.def.h
-@@ -1,7 +1,7 @@
- /* See LICENSE file for copyright and license details. */
- 
- /* appearance */
--static const unsigned int borderpx  = 1;        /* border pixel of windows */
-+static const unsigned int borderpx  = 0;        /* border pixel of windows */
- static const unsigned int snap      = 32;       /* snap pixel */
- static const int showbar            = 1;        /* 0 means no bar */
- static const int topbar             = 1;        /* 0 means bottom bar */
-@@ -32,7 +32,7 @@ static const Rule rules[] = {
- };
- 
- /* layout(s) */
--static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
-+static const float mfact     = 0.5; /* factor of master area size [0.05..0.95] */
- static const int nmaster     = 1;    /* number of clients in master area */
- static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
- 
-@@ -44,7 +44,7 @@ static const Layout layouts[] = {
- };
- 
- /* key definitions */
--#define MODKEY Mod1Mask
-+#define MODKEY Mod4Mask
- #define TAGKEYS(KEY,TAG) \
- 	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
- 	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-@@ -57,6 +57,9 @@ static const Layout layouts[] = {
- /* commands */
- static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
--static const char *termcmd[]  = { "st", NULL };
-+static const char *roficmd[] = { "rofi", "-show", "drun", "-show-icons", NULL };
-+static const char *termcmd[]  = { "kitty", NULL };
-+static const char *customcmd_1[] = {"flameshot", "gui", "-c", "-s", NULL};
-+static const char *customcmd_2[] = {"flameshot", "gui", "-s", NULL};
- 
- static Key keys[] = {
- 	/* modifier                     key        function        argument */
--- 
 2.38.4
 
-diff --git a/config.def.h b/config.def.h
-index 1c0b587..cb8053a 100644
---- a/config.def.h
-+++ b/config.def.h
-@@ -35,6 +35,7 @@ static const Rule rules[] = {
- static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
- static const int nmaster     = 1;    /* number of clients in master area */
- static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
-+static const int attachbelow = 1;    /* 1 means attach after the currently active window */
- 
- static const Layout layouts[] = {
- 	/* symbol     arrange function */
---- a/dwm.1
-+++ b/dwm.1
-@@ -29,6 +29,9 @@ color. The tags of the focused window are indicated with a filled square in the
- top left corner.  The tags which are applied to one or more windows are
- indicated with an empty square in the top left corner.
- .P
-+The attach below patch makes newly spawned windows attach after the currently
-+selected window
-+.P
- dwm draws a small border around windows to indicate the focus state.
- .SH OPTIONS
- .TP
---- a/dwm.c
-+++ b/dwm.c
-@@ -147,6 +147,7 @@ static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interac
- static void arrange(Monitor *m);
- static void arrangemon(Monitor *m);
- static void attach(Client *c);
-+static void attachBelow(Client *c);
- static void attachstack(Client *c);
- static void buttonpress(XEvent *e);
- static void checkotherwm(void);
-@@ -405,6 +406,21 @@ attach(Client *c)
- 	c->next = c->mon->clients;
- 	c->mon->clients = c;
- }
-+void
-+attachBelow(Client *c)
-+{
-+	//If there is nothing on the monitor or the selected client is floating, attach as normal
-+	if(c->mon->sel == NULL || c->mon->sel == c || c->mon->sel->isfloating) {
-+		attach(c);
-+		return;
-+	}
-+
-+	//Set the new client's next property to the same as the currently selected clients next
-+	c->next = c->mon->sel->next;
-+	//Set the currently selected clients next property to the new client
-+	c->mon->sel->next = c;
-+
-+}
- 
- void
- attachstack(Client *c)
-@@ -1062,7 +1078,10 @@ manage(Window w, XWindowAttributes *wa)
- 		c->isfloating = c->oldstate = trans != None || c->isfixed;
- 	if (c->isfloating)
- 		XRaiseWindow(dpy, c->win);
--	attach(c);
-+	if( attachbelow )
-+		attachBelow(c);
-+	else
-+		attach(c);
- 	attachstack(c);
- 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
- 		(unsigned char *) &(c->win), 1);
-@@ -1417,7 +1436,10 @@ sendmon(Client *c, Monitor *m)
- 	detachstack(c);
- 	c->mon = m;
- 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
--	attach(c);
-+	if( attachbelow )
-+		attachBelow(c);
-+	else
-+		attach(c);
- 	attachstack(c);
- 	focus(NULL);
- 	arrange(NULL);
-@@ -1897,7 +1919,10 @@ updategeom(void)
- 					m->clients = c->next;
- 					detachstack(c);
- 					c->mon = mons;
--					attach(c);
-+					if( attachbelow )
-+						attachBelow(c);
-+					else
-+						attach(c);
- 					attachstack(c);
- 				}
- 				if (m == selmon)

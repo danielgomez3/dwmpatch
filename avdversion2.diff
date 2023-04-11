@@ -24,7 +24,6 @@ index 1c0b587..83910c1 100644
  	{ MODKEY,                       XK_Return, zoom,           {0} },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
-diff --git a/dwm.c b/dwm.c
 --- a/dwm.c
 +++ b/dwm.c
 @@ -87,6 +87,7 @@ typedef struct Client Client;
@@ -133,7 +132,6 @@ among the available clients.
  3 files changed, 867 insertions(+), 36 deletions(-)
  create mode 100644 vanitygaps.c
 
-diff --git a/config.def.h b/config.def.h
 --- a/config.def.h
 +++ b/config.def.h
 @@ -3,6 +3,11 @@
@@ -148,12 +146,13 @@ diff --git a/config.def.h b/config.def.h
  static const int showbar            = 1;        /* 0 means no bar */
  static const int topbar             = 1;        /* 0 means bottom bar */
  static const char *fonts[]          = { "monospace:size=10" };
-@@ -36,11 +41,26 @@ static const float mfact     = 0.55; /* factor of master area size [0.05..0.95]
+@@ -36,11 +41,27 @@ static const float mfact     = 0.55; /* factor of master area size [0.05..0.95]
  static const int nmaster     = 1;    /* number of clients in master area */
  static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
  
 +#define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
 +#include "vanitygaps.c"
++#include "<X11/XF86keysym.h>"
 +
  static const Layout layouts[] = {
  	/* symbol     arrange function */
@@ -176,7 +175,7 @@ diff --git a/config.def.h b/config.def.h
  };
  
  /* key definitions */
-@@ -74,6 +94,27 @@ static Key keys[] = {
+@@ -74,6 +95,27 @@ static Key keys[] = {
  	{ MODKEY|ShiftMask,             XK_l,      setcfact,       {.f = -0.25} },
  	{ MODKEY|ShiftMask,             XK_o,      setcfact,       {.f =  0.00} },
  	{ MODKEY,                       XK_Return, zoom,           {0} },
@@ -205,7 +204,6 @@ diff --git a/config.def.h b/config.def.h
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index 5592c57..7d503cb 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -120,6 +120,10 @@ struct Monitor {
@@ -280,7 +278,6 @@ index 5592c57..7d503cb 100644
  togglebar(const Arg *arg)
  {
 diff --git a/vanitygaps.c b/vanitygaps.c
-new file mode 100644
 --- /dev/null
 +++ b/vanitygaps.c
 @@ -0,0 +1,822 @@
@@ -1119,7 +1116,6 @@ Subject: [PATCH] changing superflous things
  config.def.h | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/config.def.h b/config.def.h
 --- a/config.def.h
 +++ b/config.def.h
 @@ -1,7 +1,7 @@
@@ -1149,12 +1145,11 @@ diff --git a/config.def.h b/config.def.h
  #define TAGKEYS(KEY,TAG) \
  	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
  	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-@@ -57,7 +57,13 @@ static const Layout layouts[] = {
+@@ -57,7 +57,12 @@ static const Layout layouts[] = {
  /* commands */
  static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
  static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
 -static const char *termcmd[]  = { "st", NULL };
-+static const char *termcmd[]  = { "kitty", NULL };
 +static const char *roficmd[] = { "rofi", "-show", "drun", "-show-icons", NULL };
 +static const char *termcmd[]  = { "kitty", NULL };
 +static const char *brupcmd[] = {"brightnessctl", "set", "10%+", NULL};
@@ -1179,7 +1174,6 @@ index 1c0b587..cb8053a 100644
  
  static const Layout layouts[] = {
  	/* symbol     arrange function */
-diff --git a/dwm.1 b/dwm.1
 --- a/dwm.1
 +++ b/dwm.1
 @@ -29,6 +29,9 @@ color. The tags of the focused window are indicated with a filled square in the
@@ -1192,7 +1186,6 @@ diff --git a/dwm.1 b/dwm.1
  dwm draws a small border around windows to indicate the focus state.
  .SH OPTIONS
  .TP
-diff --git a/dwm.c b/dwm.c
 --- a/dwm.c
 +++ b/dwm.c
 @@ -147,6 +147,7 @@ static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interac

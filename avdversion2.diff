@@ -152,7 +152,7 @@ among the available clients.
  
 +#define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
 +#include "vanitygaps.c"
-+#include "<X11/xf86keysym.h>"
++#include "<X11/XF86keysym.h>"
 +
  static const Layout layouts[] = {
  	/* symbol     arrange function */

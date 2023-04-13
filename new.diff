@@ -87,7 +87,7 @@ index 1c0b587..e5ec4c1 100644
  	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
  	{ MODKEY,                       XK_b,      togglebar,      {0} },
  	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
-@@ -70,7 +93,25 @@ static Key keys[] = {
+@@ -70,7 +93,29 @@ static Key keys[] = {
  	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
  	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
  	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
@@ -128,6 +128,7 @@ index 13b3729..fb6e76c 100644
  .SH OPTIONS
  .TP
 diff --git a/dwm.c b/dwm.c
+index 4465af1..183aa42 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -87,6 +87,7 @@ typedef struct Client Client;
@@ -310,6 +311,7 @@ diff --git a/dwm.c b/dwm.c
  				if (m == selmon)
 diff --git a/vanitygaps.c b/vanitygaps.c
 new file mode 100644
+index 0000000..1a816b6
 --- /dev/null
 +++ b/vanitygaps.c
 @@ -0,0 +1,822 @@

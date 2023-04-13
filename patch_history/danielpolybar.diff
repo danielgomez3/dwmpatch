@@ -1,0 +1,33 @@
+From c80bbb393b741bfa428fdbebc0027e6ff2c4b69d Mon Sep 17 00:00:00 2001
+From: mihirlad55 <mihirlad55@gmail.com>
+Date: Sun, 26 Sep 2021 00:36:41 +0000
+Subject: [PATCH] Add support for managing external status bars
+
+This patch allows dwm to manage other status bars such as
+polybar/lemonbar without them needing to set override-redirect. For
+all intents and purposes, DWM treats this bar as if it were its own
+and as a result helps the status bar and DWM live in harmony.
+
+This has a few advantages
+* The bar does not block fullscreen windows
+* DWM makes room for the status bar, so windows do not overlap the bar
+* The bar can be hidden/killed and DWM will not keep an unsightly gap
+  where the bar was
+* DWM receives EnterNotify events when your cursor enters the bar
+
+To use another status bar, set usealtbar to 1 in your config.h and set
+altbarclass to the class name (can be found using xprop) to the class
+name of your status bar. Also make sure that if your status bar will
+be displayed on top, topbar is set to 1 in your config, and if it will
+be displayed on bottom, topbar is set to 0. This patch does not
+support bars that are not docked at the top or at the bottom of your
+monitor.
+
+The patch is developed at https://github.com/mihirlad55/dwm-anybar
+---
+ config.def.h |   3 ++
+ dwm.c        | 114 ++++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 103 insertions(+), 14 deletions(-)
+
+diff --git a/config.def.h b/config.def.h
+index a2ac963..04ba79c 100644

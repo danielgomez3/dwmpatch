@@ -99,7 +99,7 @@ index 1c0b587..e5ec4c1 100644
 +	{ MODKEY, XK_p, spawn, {.v = roficmd } },
 +	{ MODKEY, 											XK_c,		 spawn,						{.v = customcmd_1} },
 +	{ MODKEY, 											XK_x,		 spawn,						{.v = customcmd_2} },
-+	{ MODKEY,                       XK_d,    spawn,           {.v = termcmd2 } },
++	{ MODKEY}ShiftMask,             XK_p,    spawn,           {.v = termcmd2 } },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },

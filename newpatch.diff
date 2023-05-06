@@ -78,7 +78,7 @@ index 1c0b587..e5ec4c1 100644
 +static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL }; /*unused*/
 +static const char *roficmd[] = { "rofi", "-show", "drun", "-show-icons", NULL };
 +static const char *termcmd[]  = { "kitty", NULL };
-+static const char *termcmd2[]  = { "kitty --session $HOME/.config/home-manager/extraconfig/kitty-sessions/school.conf", NULL };
++static const char *termcmd2[]  = { "kitty --session /home/daniel/.config/home-manager/extraconfig/kitty-sessions/school.conf", NULL };
 +static const char *customcmd_1[] = {"flameshot", "gui", "-c", "-s", NULL};
 +static const char *customcmd_2[] = {"flameshot", "gui", "-s", NULL};
  

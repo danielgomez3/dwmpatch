@@ -78,6 +78,7 @@ index 1c0b587..e5ec4c1 100644
 +static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL }; /*unused*/
 +static const char *roficmd[] = { "rofi", "-show", "drun", "-show-icons", NULL };
 +static const char *termcmd[]  = { "kitty", NULL };
++static const char *termcmd2[]  = { "kitty --session $HOME/.config/home-manager/extraconfig/kitty-sessions/school.conf", NULL };
 +static const char *customcmd_1[] = {"flameshot", "gui", "-c", "-s", NULL};
 +static const char *customcmd_2[] = {"flameshot", "gui", "-s", NULL};
  
@@ -87,7 +88,7 @@ index 1c0b587..e5ec4c1 100644
  	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
  	{ MODKEY,                       XK_b,      togglebar,      {0} },
  	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
-@@ -70,7 +93,25 @@ static Key keys[] = {
+@@ -70,7 +93,15 @@ static Key keys[] = {
  	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
  	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
  	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
@@ -95,21 +96,10 @@ index 1c0b587..e5ec4c1 100644
 +	{ MODKEY|ShiftMask,             XK_j,      setcfact,       {.f = -0.25} },
 +	{ MODKEY|ShiftMask,             XK_o,      setcfact,       {.f =  0.00} },
  	{ MODKEY,                       XK_Return, zoom,           {0} },
-+	{ MODKEY|Mod4Mask,              XK_u,      incrgaps,       {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_u,      incrgaps,       {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_6,      incrihgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_6,      incrihgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_7,      incrivgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_7,      incrivgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_8,      incrohgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_8,      incrohgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_9,      incrovgaps,     {.i = +1 } },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_9,      incrovgaps,     {.i = -1 } },
-+	{ MODKEY|Mod4Mask,              XK_0,      togglegaps,     {0} },
-+	{ MODKEY|Mod4Mask|ShiftMask,    XK_0,      defaultgaps,    {0} },
 +	{ MODKEY, XK_p, spawn, {.v = roficmd } },
 +	{ MODKEY, 											XK_c,		 spawn,						{.v = customcmd_1} },
 +	{ MODKEY, 											XK_x,		 spawn,						{.v = customcmd_2} },
++	{ MODKEY|ShiftMask,             XK_p,    spawn,           {.v = termcmd2 } },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
@@ -127,7 +117,6 @@ index 13b3729..fb6e76c 100644
  dwm draws a small border around windows to indicate the focus state.
  .SH OPTIONS
  .TP
-diff --git a/dwm.c b/dwm.c
 --- a/dwm.c
 +++ b/dwm.c
 @@ -87,6 +87,7 @@ typedef struct Client Client;
@@ -309,7 +298,6 @@ diff --git a/dwm.c b/dwm.c
  				}
  				if (m == selmon)
 diff --git a/vanitygaps.c b/vanitygaps.c
-new file mode 100644
 --- /dev/null
 +++ b/vanitygaps.c
 @@ -0,0 +1,822 @@

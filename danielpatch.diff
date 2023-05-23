@@ -35,10 +35,11 @@ index 1c0b587..e5ec4c1 100644
 +  *	WM_CLASS(STRING) = instance, class
 +  *	WM_NAME(STRING) = title
 +  */
-+ /* class      instance    title tags mask     isfloating   monitor */
++ /* class      instance    title                             tags mask     isfloating   monitor */
 + // other rules ...
-+ {NULL,              NULL, "zoom ",          0, 1, -1},
-+ {NULL,              NULL, "Zoom Meeting",   0, 0, -1},
++ {"zoom",        NULL,     "Zoom - Licensed Account ",        1 << 8,             1,           -1},
++ {".zoom",        NULL,    "Zoom - Licensed Account",         1 << 8,             1,           -1},
++ {NULL,        NULL,       "Zoom Meeting",                    1 << 8,        1,           -1},
  };
  
  /* layout(s) */

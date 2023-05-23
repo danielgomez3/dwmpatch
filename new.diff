@@ -37,9 +37,9 @@ index 1c0b587..e5ec4c1 100644
 +  */
 + /* class      instance    title                             tags mask     isfloating   monitor */
 + // other rules ...
-+ {"zoom",        NULL,     "Zoom - Licensed Account ",        1 << 8,             1,           -1},
-+ {".zoom",        NULL,    "Zoom - Licensed Account",         1 << 8,             1,           -1},
-+ {NULL,        NULL,       "Zoom Meeting",                    1 << 8,        1,           -1},
++ {"zoom",        NULL,     "Zoom - Licensed Account ",        1 << 8,             1,           1},
++ {".zoom",        NULL,    "Zoom - Licensed Account",         1 << 8,             1,           1},
++ {NULL,        NULL,       "Zoom Meeting",                    1 << 8,             1,           1},
  };
  
  /* layout(s) */
